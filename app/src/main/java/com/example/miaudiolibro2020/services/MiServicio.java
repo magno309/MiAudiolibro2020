@@ -16,6 +16,12 @@ public class MiServicio extends Service {
     }
 
     @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d("MSAL", "Servicio finalizado");
+    }
+
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         //Tarea exhaustiva
         Log.d("MSAL", "Iniciando tarea pesada");

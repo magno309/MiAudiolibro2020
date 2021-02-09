@@ -88,8 +88,8 @@ public class DetalleFragment extends Fragment implements View.OnTouchListener, M
     }
 
     private void ponInfoLibro(int id, View vista){
-        Intent servicio = new Intent(getContext(), MiServicio.class);
-        getActivity().startService(servicio);
+        //Intent servicio = new Intent(getContext(), MiServicio.class);
+        //getActivity().startService(servicio);
         Libro libro = Libro.ejemploLibros().elementAt(id);
         ((TextView) vista.findViewById(R.id.titulo)).setText(libro.titulo);
         ((TextView) vista.findViewById(R.id.autor)).setText(libro.autor);
