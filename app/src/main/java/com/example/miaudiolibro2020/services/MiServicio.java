@@ -2,12 +2,36 @@ package com.example.miaudiolibro2020.services;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import java.util.Random;
+
 public class MiServicio extends Service {
+
+    // Binder given to clients
+    private final IBinder binder = new LocalBinder();
+    // Random number generator
+    private final Random mGenerator = new Random();
+
+    public class LocalBinder extends Binder {
+        MiServicio getService() {
+            return MiServicio.this;
+        }
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return binder;
+    }
+
+    /** method for clients */
+    public int getRandomNumber() {
+        return mGenerator.nextInt(100);
+    }
 
     @Override
     public void onCreate() {
@@ -34,10 +58,4 @@ public class MiServicio extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-
-        return null;
-    }
 }
