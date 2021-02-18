@@ -1,6 +1,7 @@
 package com.example.miaudiolibro2020;
 
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -17,6 +18,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.miaudiolibro2020.services.MiServicio;
+import com.example.miaudiolibro2020.services.ServicioMedia;
 
 import java.io.IOException;
 
@@ -102,8 +104,7 @@ public class DetalleFragment extends Fragment implements View.OnTouchListener, M
         mediaPlayer.setOnPreparedListener(this);
         mediaController = new MediaController(getActivity());
         Uri audio = Uri.parse(libro.urlAudio);
-
-
+        Intent servicioAudio = new Intent(getContext(), ServicioMedia.class);
         try {
             mediaPlayer.setDataSource(getActivity(), audio);
             mediaPlayer.prepareAsync();

@@ -20,6 +20,7 @@
         </activity>
         <service android:name=".services.MiServicio"/>
         <service android:name=".services.MiIntentService"/>
+        <service android:name=".services.ServicioMedia"/>
     </application>
 
 </manifest>
