@@ -22,7 +22,7 @@ import com.example.miaudiolibro2020.services.ServicioMedia;
 
 import java.io.IOException;
 
-public class DetalleFragment extends Fragment implements View.OnTouchListener, MediaPlayer.OnPreparedListener, MediaController.MediaPlayerControl {
+public class DetalleFragment extends Fragment{
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -31,8 +31,11 @@ public class DetalleFragment extends Fragment implements View.OnTouchListener, M
     public static final String ARG_ID_LIBRO = "id_libro";
 
     //Reproductores
-    private MediaPlayer mediaPlayer;
+    //private MediaPlayer mediaPlayer;
     private MediaController mediaController;
+
+    //Servicios
+    Intent servicioAudio;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -96,101 +99,8 @@ public class DetalleFragment extends Fragment implements View.OnTouchListener, M
         ((TextView) vista.findViewById(R.id.titulo)).setText(libro.titulo);
         ((TextView) vista.findViewById(R.id.autor)).setText(libro.autor);
         ((ImageView) vista.findViewById(R.id.portada)).setImageResource(libro.recursoImagen);
-        vista.setOnTouchListener(this);
-        if(mediaPlayer != null){
-            mediaPlayer.release();
-        }
-        mediaPlayer = new MediaPlayer();
-        mediaPlayer.setOnPreparedListener(this);
-        mediaController = new MediaController(getActivity());
-        Uri audio = Uri.parse(libro.urlAudio);
-        Intent servicioAudio = new Intent(getContext(), ServicioMedia.class);
-        try {
-            mediaPlayer.setDataSource(getActivity(), audio);
-            mediaPlayer.prepareAsync();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void onPrepared(MediaPlayer mediaPlayer) {
-        mediaPlayer.start();
-        mediaController.setMediaPlayer(this);
-        mediaController.setAnchorView(getView().findViewById(R.id.detalle_fragment));
-        mediaController.setEnabled(true);
-        mediaController.show();
-    }
-
-    @Override
-    public boolean onTouch(View view, MotionEvent motionEvent) {
-        return false;
-    }
-
-    @Override
-    public void start() {
-        mediaPlayer.start();
-    }
-
-    @Override
-    public void pause() {
-        mediaPlayer.pause();
-    }
-
-    @Override
-    public int getDuration() {
-        return mediaPlayer.getDuration();
-    }
-
-    @Override
-    public int getCurrentPosition() {
-        return mediaPlayer.getCurrentPosition();
-    }
-
-    @Override
-    public void seekTo(int i) {
-        mediaPlayer.seekTo(i);
-    }
-
-    @Override
-    public boolean isPlaying() {
-        return mediaPlayer.isPlaying();
-    }
-
-    @Override
-    public int getBufferPercentage() {
-        return 0;
-    }
-
-    @Override
-    public boolean canPause() {
-        return true;
-    }
-
-    @Override
-    public boolean canSeekBackward() {
-        return false;
-    }
-
-    @Override
-    public boolean canSeekForward() {
-        return false;
-    }
-
-    @Override
-    public int getAudioSessionId() {
-        return mediaPlayer.getAudioSessionId();
-    }
-
-    @Override
-    public void onStop(){
-        mediaController.hide();
-        try {
-            mediaPlayer.stop();
-            mediaPlayer.release();
-        } catch (IllegalStateException e) {
-            e.printStackTrace();
-        }
-        super.onStop();
+        servicioAudio = new Intent(getContext(), ServicioMedia.class);
+        servicioAudio.putExtra("idLibro", id);
+        getActivity().startService(servicioAudio);
     }
 }
