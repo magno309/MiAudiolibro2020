@@ -1,10 +1,16 @@
 package com.example.miaudiolibro2020;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Binder;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -22,7 +28,7 @@ import com.example.miaudiolibro2020.services.ServicioMedia;
 
 import java.io.IOException;
 
-public class DetalleFragment extends Fragment{
+public class DetalleFragment extends Fragment implements MediaController.MediaPlayerControl, View.OnTouchListener{
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -31,8 +37,7 @@ public class DetalleFragment extends Fragment{
     public static final String ARG_ID_LIBRO = "id_libro";
 
     //Reproductores
-    //private MediaPlayer mediaPlayer;
-    private MediaController mediaController;
+    private MediaController mc;
 
     //Servicios
     Intent servicioAudio;
@@ -92,15 +97,117 @@ public class DetalleFragment extends Fragment{
         ponInfoLibro(id, getView());
     }
 
+    private int mId;
+
     private void ponInfoLibro(int id, View vista){
-        //Intent servicio = new Intent(getContext(), MiServicio.class);
-        //getActivity().startService(servicio);
         Libro libro = Libro.ejemploLibros().elementAt(id);
         ((TextView) vista.findViewById(R.id.titulo)).setText(libro.titulo);
         ((TextView) vista.findViewById(R.id.autor)).setText(libro.autor);
         ((ImageView) vista.findViewById(R.id.portada)).setImageResource(libro.recursoImagen);
+        mId = id;
+        mc = new MediaController(getActivity());
         servicioAudio = new Intent(getContext(), ServicioMedia.class);
         servicioAudio.putExtra("idLibro", id);
         getActivity().startService(servicioAudio);
+        getActivity().bindService(servicioAudio, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private boolean mBound = true;
+    ServicioMedia mService;
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            ServicioMedia.LocalBinder binder = (ServicioMedia.LocalBinder) service;
+            mService = binder.getService();
+            mBound = true;
+            showMediaControllerHere();
+            Log.d("DFSM", "Dibujó el MediaController");
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.d("DFSM", "Hizo unbind");
+            mBound = false;
+        }
+    };
+
+    public void showMediaControllerHere(){
+        if (mBound){
+            mc.setAnchorView(getView());
+            mc.setMediaPlayer(this);
+            mc.setEnabled(true);
+            mc.show(0);
+        }
+    }
+
+    @Override
+    public void start() {
+        /*Intent intent = new Intent(getContext(), ServicioMedia.class);
+        intent.putExtra("idLibro", mId);
+        getActivity().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);*/
+        //Log.d("DFSM", "Entra al Start");
+        mService.mediaPlayer.start();
+    }
+
+    @Override
+    public void pause() {
+        if(mBound){
+            //getActivity().stopService(servicioAudio);
+            getActivity().unbindService(mConnection);
+            mBound = false;
+        }
+    }
+
+    @Override
+    public int getDuration() {
+        return mService.mediaPlayer.getDuration();
+    }
+
+    @Override
+    public int getCurrentPosition() {
+        return mService.mediaPlayer.getCurrentPosition();
+    }
+
+    @Override
+    public void seekTo(int pos) {
+        mService.mediaPlayer.seekTo(pos);
+    }
+
+    @Override
+    public boolean isPlaying() {
+        return mService.mediaPlayer.isPlaying();
+    }
+
+    @Override
+    public int getBufferPercentage() {
+        return 0;
+    }
+
+    @Override
+    public boolean canPause() {
+        return true;
+    }
+
+    @Override
+    public boolean canSeekBackward() {
+        return true;
+    }
+
+    @Override
+    public boolean canSeekForward() {
+        return true;
+    }
+
+    @Override
+    public int getAudioSessionId() {
+        return mService.mediaPlayer.getAudioSessionId();
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        Log.d("DFSM", "Tocaste la pantalla!");
+        mc.show();
+        return false;
     }
 }

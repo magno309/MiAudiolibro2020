@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
@@ -17,11 +18,17 @@ import com.example.miaudiolibro2020.Libro;
 
 import java.io.IOException;
 
-public class ServicioMedia extends Service implements MediaPlayer.OnPreparedListener, MediaController.MediaPlayerControl {
+public class ServicioMedia extends Service implements MediaPlayer.OnCompletionListener{
 
-    private MediaPlayer mediaPlayer = null;
-    private MediaController mediaController;
+    public MediaPlayer mediaPlayer = null;
+    public final IBinder binder = new LocalBinder();
+    public boolean Bond = false;
 
+    public class LocalBinder extends Binder {
+        public ServicioMedia getService() {
+            return ServicioMedia.this;
+        }
+    }
 
     public int onStartCommand(Intent intent, int flags, int startId) {
         int idLibro = intent.getIntExtra("idLibro", 1);
@@ -30,19 +37,16 @@ public class ServicioMedia extends Service implements MediaPlayer.OnPreparedList
             mediaPlayer.release();
         }
         mediaPlayer = new MediaPlayer();
-        mediaPlayer.setOnPreparedListener(this);
-        mediaController = new MediaController(getApplicationContext());
+        mediaPlayer.setOnCompletionListener(this);
+        //mediaController = new MediaController(getApplicationContext());
         Uri audio = Uri.parse(libro.urlAudio);
-        //Falta ponerle el anchor
-        //mediaController.setAnchorView(getView());
-        mediaController.setMediaPlayer(this);
-        mediaController.setEnabled(true);
-        mediaController.show();
+        Log.d("DFSM", "Entra al servicio");
         try {
             mediaPlayer.setDataSource(getApplicationContext(), audio);
-            mediaPlayer.prepareAsync();
+            mediaPlayer.prepare();
             if (!mediaPlayer.isPlaying()) {
                 mediaPlayer.start();
+                Log.d("DFSM", "Pasa el start");
             }
         } catch (IOException e) {
             Log.e("Audiolibros", "ERROR: No se puede reproducir "+audio,e);
@@ -53,67 +57,8 @@ public class ServicioMedia extends Service implements MediaPlayer.OnPreparedList
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
-    }
-
-    @Override
-    public void onPrepared(MediaPlayer mediaPlayer) {
-        mediaPlayer.start();
-    }
-
-    @Override
-    public void start() {
-        mediaPlayer.start();
-    }
-
-    @Override
-    public void pause() {
-        mediaPlayer.pause();
-    }
-
-    @Override
-    public int getDuration() {
-        return mediaPlayer.getDuration();
-    }
-
-    @Override
-    public int getCurrentPosition() {
-        return mediaPlayer.getCurrentPosition();
-    }
-
-    @Override
-    public void seekTo(int i) {
-        mediaPlayer.seekTo(i);
-    }
-
-    @Override
-    public boolean isPlaying() {
-        return mediaPlayer.isPlaying();
-    }
-
-    @Override
-    public int getBufferPercentage() {
-        return 0;
-    }
-
-    @Override
-    public boolean canPause() {
-        return true;
-    }
-
-    @Override
-    public boolean canSeekBackward() {
-        return true;
-    }
-
-    @Override
-    public boolean canSeekForward() {
-        return true;
-    }
-
-    @Override
-    public int getAudioSessionId() {
-        return mediaPlayer.getAudioSessionId();
+        Log.d("DFSM", "Queda bindeado");
+        return binder;
     }
 
     @Override
@@ -124,4 +69,8 @@ public class ServicioMedia extends Service implements MediaPlayer.OnPreparedList
         mediaPlayer.release();
     }
 
+    @Override
+    public void onCompletion(MediaPlayer mp) {
+        this.stopSelf();
+    }
 }
