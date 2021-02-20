@@ -43,11 +43,11 @@ public class SelectorFragment extends Fragment {
         adapter.setOnClickListener(
                 vista -> {
                     int posSeleccionado = rvRecyclerView.getChildAdapterPosition(vista);
-                    Toast.makeText(getActivity(), "Elemento seleccionado " + posSeleccionado, Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getActivity(), "Elemento seleccionado " + posSeleccionado, Toast.LENGTH_SHORT).show();
                     mainActivity.mostrarDetalle(posSeleccionado);
                 }
         );
-        adapter.setOnLongClickListener( view -> {
+        /*adapter.setOnLongClickListener( view -> {
             AlertDialog.Builder cuadroDialogo = new AlertDialog.Builder(contexto);
             cuadroDialogo.setTitle("Seleccionar la acción");
             cuadroDialogo.setItems(new String[]{"Compartir", "Eliminar", "Agregar"}, (dialogInterface, i) -> {
@@ -60,7 +60,7 @@ public class SelectorFragment extends Fragment {
                     }
             );
             return false;
-        });
+        });*/
         rvRecyclerView.setAdapter(adapter);
         return v;
     }

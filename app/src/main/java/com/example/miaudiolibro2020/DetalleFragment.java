@@ -28,64 +28,25 @@ import com.example.miaudiolibro2020.services.ServicioMedia;
 
 import java.io.IOException;
 
-public class DetalleFragment extends Fragment implements MediaController.MediaPlayerControl, View.OnTouchListener{
-
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+public class DetalleFragment extends Fragment implements View.OnTouchListener, MediaController.MediaPlayerControl{
     public static final String ARG_ID_LIBRO = "id_libro";
-
-    //Reproductores
+    public static final String ARG_AUDIO_INICIADO = "audio_iniciado";
     private MediaController mc;
-
-    //Servicios
-    Intent servicioAudio;
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
-
-    public DetalleFragment() {
-        // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment DetalleFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static DetalleFragment newInstance(String param1, String param2) {
-        DetalleFragment fragment = new DetalleFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
-    }
+    private Intent intentServicioMedia;
+    private boolean mBound = false;
+    private ServicioMedia mService;
+    private boolean audioIniciado;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        Log.d("DFSM", "entra onCreateView DetalleFragment");
         View v = inflater.inflate(R.layout.fragment_detalle, container, false);
         Bundle args = getArguments();
-
         if(args != null){
             int position = args.getInt(ARG_ID_LIBRO);
+            audioIniciado = args.getBoolean(ARG_AUDIO_INICIADO);
             ponInfoLibro(position, v);
         }else{
             ponInfoLibro(0, v);
@@ -97,86 +58,92 @@ public class DetalleFragment extends Fragment implements MediaController.MediaPl
         ponInfoLibro(id, getView());
     }
 
-    private int mId;
-
     private void ponInfoLibro(int id, View vista){
+        Log.d("DFSM", "entra ponInfoLibro");
         Libro libro = Libro.ejemploLibros().elementAt(id);
         ((TextView) vista.findViewById(R.id.titulo)).setText(libro.titulo);
         ((TextView) vista.findViewById(R.id.autor)).setText(libro.autor);
         ((ImageView) vista.findViewById(R.id.portada)).setImageResource(libro.recursoImagen);
-        mId = id;
-        mc = new MediaController(getActivity());
-        servicioAudio = new Intent(getContext(), ServicioMedia.class);
-        servicioAudio.putExtra("idLibro", id);
-        getActivity().startService(servicioAudio);
-        getActivity().bindService(servicioAudio, mConnection, Context.BIND_AUTO_CREATE);
-    }
+        vista.setOnTouchListener(this);
+        intentServicioMedia = new Intent(getActivity().getBaseContext(), ServicioMedia.class);
+        intentServicioMedia.putExtra("idLibro", id);
+        intentServicioMedia.putExtra("audioIniciado", audioIniciado);
+        if(!audioIniciado){
+            Log.d("DFSM", "entra ponInfoLibro audio NO iniciado");
+            //getActivity().startService(intentServicioMedia);
+            getActivity().bindService(intentServicioMedia, mConnection, Context.BIND_AUTO_CREATE);
+        }
+        else{
+            Log.d("DFSM", "entra ponInfoLibro audio SI iniciado");
+            getActivity().bindService(intentServicioMedia, mConnection, Context.BIND_AUTO_CREATE);
+        }
 
-    private boolean mBound = true;
-    ServicioMedia mService;
+    }
 
     private ServiceConnection mConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d("DFSM", "Entra onServiceConnected Conectado");
             ServicioMedia.LocalBinder binder = (ServicioMedia.LocalBinder) service;
             mService = binder.getService();
             mBound = true;
             showMediaControllerHere();
-            Log.d("DFSM", "Dibujó el MediaController");
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            Log.d("DFSM", "Hizo unbind");
+            Log.d("DFSM", "Entra onServiceDisconnected");
             mBound = false;
         }
     };
 
     public void showMediaControllerHere(){
         if (mBound){
-            mc.setAnchorView(getView());
+            mc = new MediaController(getActivity());
+            mc.setAnchorView(getView().findViewById(R.id.fragment_detalle));
             mc.setMediaPlayer(this);
             mc.setEnabled(true);
-            mc.show(0);
+            Log.d("DFSM", "Se creó el MediaController");
         }
     }
 
     @Override
     public void start() {
-        /*Intent intent = new Intent(getContext(), ServicioMedia.class);
-        intent.putExtra("idLibro", mId);
-        getActivity().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);*/
-        //Log.d("DFSM", "Entra al Start");
         mService.mediaPlayer.start();
+        Log.d("DFSM", "Start MediaPlayer desde Start MediaController");
     }
 
     @Override
     public void pause() {
-        if(mBound){
-            //getActivity().stopService(servicioAudio);
-            getActivity().unbindService(mConnection);
-            mBound = false;
-        }
+        mService.mediaPlayer.pause();
     }
 
     @Override
     public int getDuration() {
-        return mService.mediaPlayer.getDuration();
+        if(mService.mediaPlayer.isPlaying())
+            return mService.mediaPlayer.getDuration();
+        return 0;
     }
 
     @Override
     public int getCurrentPosition() {
-        return mService.mediaPlayer.getCurrentPosition();
+        if(mService.mediaPlayer.isPlaying())
+            return mService.mediaPlayer.getCurrentPosition();
+        return 0;
     }
 
     @Override
     public void seekTo(int pos) {
-        mService.mediaPlayer.seekTo(pos);
+        if(mService.mediaPlayer.isPlaying())
+            mService.mediaPlayer.seekTo(pos);
     }
 
     @Override
     public boolean isPlaying() {
-        return mService.mediaPlayer.isPlaying();
+        if(mService.mediaPlayer!=null){
+            return mService.mediaPlayer.isPlaying();
+        }
+        return false;
     }
 
     @Override
@@ -201,13 +168,17 @@ public class DetalleFragment extends Fragment implements MediaController.MediaPl
 
     @Override
     public int getAudioSessionId() {
-        return mService.mediaPlayer.getAudioSessionId();
+        if(mService.mediaPlayer.isPlaying())
+            return mService.mediaPlayer.getAudioSessionId();
+        return 0;
     }
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         Log.d("DFSM", "Tocaste la pantalla!");
-        mc.show();
+        if(mService.mediaPlayer!=null){
+            mc.show();
+        }
         return false;
     }
 }
